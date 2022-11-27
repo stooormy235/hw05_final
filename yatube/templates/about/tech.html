@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Технологии{% endblock %}
+{% block content %}
+{% comment %} Колонки с отступом сверху и снизу {% endcomment %}
+<div class="row">
+  <h1>Вот что я умею</h1>
+  {% comment %}
+    Боковой блок со списком технологий 
+    Займет всю ширину блока на мобильном
+    и 25% при размерах экрана ≥768px
+  {% endcomment %}
+  <aside class="col-12 col-md-3">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item">
+        Python. Изучил python на 1%
+      </li>
+      <li class="list-group-item">
+        Django. Вообще не понимаю =)
+      </li>
+    </ul>
+  </aside>
+  {% comment %}
+    Статья  
+    Займет всю ширину блока на мобильном
+    и 75% при размерах экрана ≥768px
+  {% endcomment %}
+  <article class="col-12 col-md-9">
+    <br>
+    <h3><p>Визг души автора</p></h3>
+    <p>На написание этой старницы у меня ушло очень мало времени.<p>
+    <p>У меня хорошо программирование на python,ну мне так кажется!</p>
+    <p>А это я,когда у меня 1000 ошибок в коде</p><img src='https://pokerizzy.ru/storage/2021/12/maxresdefault-1.jpg'height='175px'width='235px'>
+  </article>
+</div>
+{% endblock %}
