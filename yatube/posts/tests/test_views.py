@@ -1,16 +1,16 @@
-from django.test import Client, TestCase
-from django.urls import reverse
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase
+from django.urls import reverse
 
-from ..models import Group, Post, User, Follow
+from ..models import Follow, Group, Post, User
 
 
 class PostPagesTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create(username='auth')
+        cls.user = User.objects.create_user(username='auth')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug',
@@ -123,6 +123,7 @@ class FollowViewsTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.user = User.objects.create_user(username='auth')
         cls.post_autor = User.objects.create(
             username='post_autor',
         )
@@ -133,9 +134,20 @@ class FollowViewsTest(TestCase):
             text='Подпишись на меня',
             author=cls.post_autor,
         )
+        cls.PROFILE_FOLLOW_URL = (
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': cls.post_follower})
+        )
+        cls.PROFILE_UNFOLLOW_URL = {
+            reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': cls.post_follower})
+        }
 
     def setUp(self):
         cache.clear()
+        self.authorized_client = Client()
         self.author_client = Client()
         self.author_client.force_login(self.post_follower)
         self.follower_client = Client()
@@ -144,10 +156,7 @@ class FollowViewsTest(TestCase):
     def test_follow_on_user(self):
         """Проверка подписки на пользователя."""
         count_follow = Follow.objects.count()
-        self.follower_client.post(
-            reverse(
-                'posts:profile_follow',
-                kwargs={'username': self.post_follower}))
+        self.follower_client.post(self.PROFILE_FOLLOW_URL)
         follow = Follow.objects.all().latest('id')
         self.assertEqual(Follow.objects.count(), count_follow + 1)
         self.assertEqual(follow.author_id, self.post_follower.id)
@@ -159,11 +168,8 @@ class FollowViewsTest(TestCase):
             user=self.post_autor,
             author=self.post_follower)
         count_follow = Follow.objects.count()
-        self.follower_client.post(
-            reverse(
-                'posts:profile_unfollow',
-                kwargs={'username': self.post_follower}))
-        self.assertEqual(Follow.objects.count(), count_follow - 1)
+        self.follower_client.post(self.PROFILE_UNFOLLOW_URL)
+        self.assertEqual(self.user.follower.count(), count_follow - 1)
 
     def test_follow_on_authors(self):
         """Проверка записей у тех кто подписан."""
@@ -185,3 +191,8 @@ class FollowViewsTest(TestCase):
         response = self.author_client.get(
             reverse('posts:follow_index'))
         self.assertNotIn(post, response.context['page_obj'].object_list)
+
+    def test_not_able_subscribe_yourself(self):
+        """Проверьте, что нельзя подписаться на самого себя"""
+        self.authorized_client.get(self.PROFILE_FOLLOW_URL)
+        self.assertEqual(self.user.follower.count(), 0)

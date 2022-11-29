@@ -1,15 +1,16 @@
 from http import HTTPStatus
-from django.test import Client, TestCase
-from django.core.cache import cache
 
-from ..models import Post, Group, User
+from django.core.cache import cache
+from django.test import Client, TestCase
+
+from ..models import Group, Post, User
 
 
 class PostURLTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create(username='HASNoName')
+        cls.user = User.objects.create_user(username='HASNoName')
         cls.post = Post.objects.create(
             author=cls.user,
             text='Тестовый пост',
@@ -32,6 +33,7 @@ class PostURLTests(TestCase):
             f'/posts/{cls.post.id}/': 'posts/post_detail.html',
             f'/posts/{cls.post.id}/edit/': 'posts/create_post.html',
             '/create/': 'posts/create_post.html',
+            '/follow/': 'posts/follow.html',
         }
 
     def setUp(self):

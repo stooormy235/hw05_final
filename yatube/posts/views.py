@@ -1,17 +1,15 @@
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render, redirect
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.views.decorators.cache import cache_page
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import PostForm, CommentForm
-from .models import Group, Post, Follow
+from .forms import CommentForm, PostForm
+from .models import Follow, Group, Post
 from .utils import get_paginator
 
 User = get_user_model()
 
 
-@cache_page(20)
 def index(request):
     posts = Post.objects.select_related(
         'author', 'group')[:settings.NUMBER_POSTS]
@@ -35,18 +33,23 @@ def group_posts(request, slug):
 
 
 def profile(request, username):
-    posts_authors = get_object_or_404(User, username=username)
+    author = get_object_or_404(User, username=username)
     post_list = Post.objects.select_related(
-        'group', 'author').filter(author=posts_authors)
+        'group', 'author').filter(author=author)
     pagin = get_paginator(post_list, request)
+    following = request.user.is_authenticated
+    if following:
+        following = author.following.filter(user=request.user).exists()
     return render(request,
                   'posts/profile.html',
-                  context={'page_obj': pagin,
-                           'posts_authors': posts_authors, })
+                  context={'author': author,
+                           'username': username,
+                           'page_obj': pagin,
+                           'following': following, })
 
 
 def post_detail(request, post_id):
-    post = Post.objects.get(id=post_id)
+    post = get_object_or_404(Post, id=post_id)
     post_detail = post.text
     comments = post.comments.select_related('author')
     form = CommentForm()
